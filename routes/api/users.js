@@ -11,6 +11,7 @@ const validateLoginInput = require("../../validation/login");
 // Load User model
 const User = require("../../models/User");
 
+// for the register route
 // @route POST api/users/register
 // @desc Register user
 // @access Public
@@ -90,10 +91,10 @@ router.post("/login", (req, res) => {
         } else {
           return res
             .status(400)
-            .json({ passwordincorrect: "Password incorrect" });
+            .json({passwordincorrect: "Password incorrect"});
         }
       });
     });
-  });
+});
 
 module.exports = router;
