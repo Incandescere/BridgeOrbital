@@ -13,6 +13,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/uuid": "^8.0.0",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.19.0",
     "concurrently": "^5.2.0",
@@ -22,9 +23,19 @@
     "mongoose": "^5.9.15",
     "passport": "^0.4.1",
     "passport-jwt": "^4.0.0",
+    "pubnub": "^4.27.6",
+    "pubnub-react": "^2.0.0",
+    "shortid": "^2.2.15",
+    "socket.io": "^2.3.0",
+    "socket.io-client": "^2.3.0",
+    "sweetalert2": "^9.13.1",
+    "sweetalert2-react-content": "^3.0.1",
+    "typeface-dosis": "^1.1.4",
+    "uuid": "^8.1.0",
     "validator": "^13.0.0"
   },
   "devDependencies": {
+    "eslint-plugin-react-hooks": "^4.0.2",
     "nodemon": "^2.0.4"
   }
 }

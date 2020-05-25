@@ -1,25 +1,26 @@
 import React, { Component } from "react";
-import { Link } from "react-router-dom";
+import {Link} from "react-router-dom";
+
 class Navbar extends Component {
   render() {
     return (
       <div className="navbar-fixed">
         <nav className="z-depth-0">
           <div className="nav-wrapper white">
-            <Link
-              to="/"
+            <Link to ="/lobby" 
               style={{
-                fontFamily: "monospace"
+                fontFamily: "Josefin Sans",
+                fontSize: 18
               }}
-              className="col s5 brand-logo center black-text"
-            >
-              <i className="material-icons">code</i>
-              BRIDGE
-            </Link>
-          </div>
-        </nav>
+              className="col s12 right black-text">
+                {/* <i className="material-icons">code</i> */}
+                Continue as guest
+              </Link>
+            </div>
+          </nav>
       </div>
     );
   }
 }
+
 export default Navbar;
