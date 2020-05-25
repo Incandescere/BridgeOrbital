@@ -13,6 +13,7 @@ import Login from "./components/auth/Login";
 import PrivateRoute from "./components/private-route/PrivateRoute";
 import Dashboard from "./components/dashboard/Dashboard";
 import Lobby from "./components/lobby/lobby";
+import Room from "./components/room/room"
 
 if (localStorage.jwtToken) {
   const token = localStorage.jwtToken;
@@ -46,6 +47,7 @@ function App() {
             <Route exact path="/register" component={Register} />
             <Route exact path="/login" component={Login} />
             <Route exact path="/lobby" component={Lobby} />
+            <Route exact path="/room" component={Room} />
             <Switch>
               <PrivateRoute exact path="/dashboard" component={Dashboard} />            
             </Switch>
