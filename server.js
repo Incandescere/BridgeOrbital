@@ -9,10 +9,25 @@ const io = require('socket.io')(http);
 const uuid = require('uuid');
 const _ = require('lodash');
 
+const HOST = "127.0.0.1";
 const PORT = process.env.PORT || 5000;
-const rooms = {};
+let rooms = [];
+var roomPK = 1;
+let sockets = {};
+
+const { cardsInitialState, startNewGame, toggleCard, collectSet, deal, cleanBoard, tTime } = require('./src/utils');
+
+function getServerInitialState() {
+  return Object.assign({}, cardsInitialState, {
+    activeUser: '',
+    lockedUsers: {}
+  });
+}
 
 const joinRoom = (socket, room) => {
+  for  (let room of rooms.filter(r => r!=roomId)){
+    client.leave(room);
+  }
   room.sockets.push(socket);
   socket.join(room.id, () => {
     socket.roomId = room.id;
@@ -77,8 +92,9 @@ const beginRound = (socket, id) => {
 
 io.on('connection', (socket) => {
 
-  socket.id = uuid;
-  console.log('a user connected');
+  socket.id = uuid.v1();
+  console.log(`a user connected${socket.id}`);
+  socket.emit('connected', {"id": socket.id});
 
   socket.on('ready', () => {
     console.log(socket.id, "is ready!");
@@ -149,7 +165,7 @@ io.on('connection', (socket) => {
 
   socket.on('createRoom', (roomName, callback) => {
     const room = {
-      id: uuid(),
+      id: Math.ceil(Math.random() * 200),
       name: roomName,
       sockets: []
     };
@@ -173,11 +189,27 @@ io.on('connection', (socket) => {
     leaveRooms(socket);
   });
 
+  socket.on('getOpponents', data => {
+    let response = [];
+    for (var id in sockets) {
+      if (id !== client.id && !sockets[id].is_playing){
+        response.push({
+          id: id,
+
+        })
+      }
+    }
+    socket.emit('getOpponentResponse', response);
+    socket.broadcast.emit('newOpponentAdded', {
+      id: socket.id
+    });
+  })
+
 });
 
-http.listen(PORT, function () {
-  console.log(`listening on *:${PORT}`);
-});
+http.listen(PORT, HOST);
+
+console.log("listening to : " + HOST + ":" + PORT);
 
 app.use(
   bodyParser.urlencoded({

@@ -1,4 +1,4 @@
-import React, { useState, useEffect} from "react";
+import React, { useState, useEffect, Component} from "react";
 import { BrowserRouter as Router, Route, Switch } from "react-router-dom";
 import jwt_decode from "jwt-decode";
 import setAuthToken from "./utils/setAuthToken";
@@ -26,54 +26,57 @@ if (localStorage.jwtToken) {
     window.location.href = "./login";
   }
 }
-const ENDPOINT = "http://192.168.1.124:5000";
+const ENDPOINT = "http://127.0.0.1:5000";
 
-function App() {
-  const [response, setResponse] = useState("");
+class App extends Component {
+  constructor(props){
+    super(props);
+    this.state = {
+      endpoint: ENDPOINT,
+      socket: null,
+      roomId: null,
+      gameStarted: false
+    };
+  }
 
-  useEffect(() => {
-    const socket = socketIOClient(ENDPOINT);
-    socket.on("FromAPI", data => {
-      setResponse(data);
+  componentDidMount(){
+    const {endpoint} = this.state;
+    const socket = socketIOClient(endpoint);
+    socket.on("connected", data => {
+      console.log(data);
+      this.setState({socket: socket});
     });
-  }, []);
+  }
 
-  return (
-    <Provider store={store}>
-        <Router>
-          <div className="App">
-            <Navbar />
-            <Route exact path="/" component={Landing} />
-            <Route exact path="/register" component={Register} />
-            <Route exact path="/login" component={Login} />
-            <Route exact path="/lobby" component={Lobby} />
-            <Route exact path="/room" component={Room} />
-            <Switch>
-              <PrivateRoute exact path="/dashboard" component={Dashboard} />            
-            </Switch>
-         </div>
-        </Router>
-      </Provider> 
-    );
+  startGame = (data) => {
+    this.setState({
+      gameStarted: true,
+      roomId: data.roomId
+    })
+  }
+
+  opponentLeft =(data) => {
+    alert("Oponent Left");
+    this.setState({gameStarted: false, roomId: null});
+  }
+
+  render () {
+      return (
+        <Provider store={store}>
+          <Router>
+            <div className="App">
+              <Navbar />
+              <Route exact path="/" component={Landing} />
+              <Route exact path="/register" component={Register} />
+              <Route exact path="/login" component={Login} />
+              <Switch>
+                <PrivateRoute exact path="/dashboard" component={Dashboard} />            
+              </Switch>
+            </div>
+          </Router>
+        </Provider> 
+      );
+  }
 }
-//  class App extends Component {
-//     render () {
-//       return (
-      //   <Provider store={store}>
-      //     <Router>
-      //       <div className="App">
-      //         <Navbar />
-      //         <Route exact path="/" component={Landing} />
-      //         <Route exact path="/register" component={Register} />
-      //         <Route exact path="/login" component={Login} />
-      //         <Switch>
-      //           <PrivateRoute exact path="/dashboard" component={Dashboard} />            
-      //         </Switch>
-      //       </div>
-      //     </Router>
-      //   </Provider> 
-      // );
-//     }
-//   }
 
 export default App;
