@@ -2,24 +2,40 @@ import React, { Component } from "react";
 import PropTypes from "prop-types";
 import { connect } from "react-redux";
 import { logoutUser } from "../../actions/authActions";
+
 class Dashboard extends Component {
   onLogoutClick = e => {
     e.preventDefault();
     this.props.logoutUser();
   };
-render() {
+  onPlayClick = () =>{
+    window.location = './lobby';
+  };
+  render() {
     const { user } = this.props.auth;
-return (
+    return (
       <div style={{ height: "75vh" }} className="container valign-wrapper">
         <div className="row">
           <div className="col s12 center-align">
             <h4>
               <b>Hey there,</b> {user.name.split(" ")[0]}
               <p className="flow-text grey-text text-darken-1">
-                You are logged into a full-stack{" "}
-                <span style={{ fontFamily: "monospace" }}>MERN</span> app 👏
+                You are logged into your favourite{" "}
+                <span style={{ fontFamily: "monospace" }}>BRIDGE</span> website 👏
               </p>
             </h4>
+            <button 
+              style={{
+                width:"150px",
+                borderRadius: "3px",
+                letterSpacing: "1.5px",
+                marginTop: "1rem"
+              }}
+              onClick={this.onPlayClick}
+              className="btn btn-large waves-effect waves-light hoverable blue accent-3"
+              >
+                Proceed to Lobby
+            </button>
             <button
               style={{
                 width: "150px",

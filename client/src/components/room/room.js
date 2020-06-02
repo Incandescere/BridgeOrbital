@@ -1,64 +1,169 @@
-import React, { Component } from 'react';
-import Swal from 'sweetalert2';
-import { Card, HandStyles, CardStyles, Hand } from 'react-casino';
+import React, { Component } from 'react'
+import socketIOClient from 'socket.io-client'
+import Swal from 'sweetalert2'
+import { Card, HandStyles, CardStyles, Hand } from 'react-casino'
+
+const ENDPOINT = 'http://127.0.0.1:5000'
+const socket = socketIOClient(ENDPOINT)
 
 class Room extends Component {
-
-  render() {
-
-    const buttonStyle = {
-      width: "750px",
-      justifyContent: "center",
-      alignItems: "center",
-      fontSize: "20px",
-      fontFamily: "Josephin Sans",
-      background: "black",
-      borderRadius: "5px",
-      color: "white",
-      margin: "10px 0px",
-      padding: "10px 60px",
-      cursor: "pointer"
+    constructor(props) {
+        super(props)
+        const {
+            match: { params },
+        } = props
+        socket.emit('joinRoom', params.roomId)
+        socket.emit('init_board', params.roomId)
     }
 
-    const handDisplay = () => {
-      return (
-        <div>
-          <HandStyles />
-          <Hand cards={[
-            { suit: 'D', face: 'A' },
-            { suit: 'C', face: 'A' },
-            { suit: 'H', face: 'A' },
-            { suit: 'S', face: 'A' }
-          ]} onClick={(e, card) => Swal.fire(`${card.face} of ${card.suit} selected`)} />
-        </div>
-      )
-    };
+    state = {
+        board: [],
+        selected: {},
+        deck: [], // this one we need to link with backend and also react-casino
+        collected: [],
+        roomId: socket.roomId,
+    }
 
-    const card = () => <Card rank="A" suit="S" />;
+    componentWillReceiveProps(nextProps) {
+        const {
+            match: { params },
+        } = this.props
+        const {
+            match: { params: nextParams },
+        } = nextProps
+        // i am not sure what exactly is going on here
+        if (params.roomId !== nextParams.roomId) {
+            socket.emit('join_room', nextParams.roomId)
+            // will need to trigger the game initial state here also
+        }
+    }
 
-    return (
-      <div>
-        <h3>Welcome to room </h3>
-        <button
-          onClick={
-            () => Swal.fire({
-              title: "No players found, redirecting to lobby..."
-            }).then(() => window.location = './lobby')
-          }
-          style={buttonStyle}
-        >
-          Start
-​    </button>
-        <div>
-          <CardStyles />
-          <Card suit='D' face='A' onClick={(e, card) => Swal.fire(`${card.face} of ${card.suit} selected`)} />
-          <Card suit='C' face='A' onClick={(e, card) => Swal.fire(`${card.face} of ${card.suit} selected`)} />
-          <Card suit='H' face='A' onClick={(e, card) => Swal.fire(`${card.face} of ${card.suit} selected`)} />
-          <Card suit='S' face='A' onClick={(e, card) => Swal.fire(`${card.face} of ${card.suit} selected`)} />
-        </div>
-      </div >
-    );
-  }
+    clickCard = () => {
+        socket.emit('click_card')
+    }
+
+    startGame = () => {
+        const {
+            match: { params },
+        } = this.props
+        socket.emit('startGame', params.roomId)
+    }
+
+    deal = () => {
+        const {
+            match: { params },
+        } = this.props
+        socket.emit('deal', params.roomId)
+    }
+
+    render() {
+        const { board, selected } = this.state
+        return (
+            <React.Fragment>
+                <div style={{ position: 'relative' }}>
+                    <Board
+                        board={board}
+                        selected={selected}
+                        clickCard={this.clickCard}
+                    />
+                </div>
+            </React.Fragment>
+        )
+    }
 }
 
-export default Room;
+const Board = () => {
+    const buttonStyle = {
+        width: '750px',
+        justifyContent: 'center',
+        alignItems: 'center',
+        fontSize: '20px',
+        fontFamily: 'Josephin Sans',
+        background: 'black',
+        borderRadius: '5px',
+        color: 'white',
+        margin: '10px 0px',
+        padding: '10px 60px',
+        cursor: 'pointer',
+    }
+
+    return (
+        <div>
+            <h3>Welcome to room </h3>
+            <button
+                onClick={() =>
+                    Swal.fire({
+                        title: 'Waiting for players to join',
+                    }).then(
+                        socket.emit('startGame', socket.roomId)
+                        // here we can socket.emit('startGame', roomId) and socket.emit('deal', roomId)
+                        // when we get there)
+                    )
+                }
+                style={buttonStyle}
+            >
+                Start ​{' '}
+            </button>
+            <Stacc />
+            <Handy />
+        </div>
+    )
+}
+
+class Handy extends Component {
+    render() {
+        return (
+            <div>
+                <HandStyles />
+                <Hand
+                    cards={[
+                        { suit: 'D', face: 'A' },
+                        { suit: 'C', face: 'A' },
+                        { suit: 'H', face: 'A' },
+                        { suit: 'S', face: 'A' },
+                    ]}
+                    onClick={(e, card) => {
+                        Swal.fire(`${card.face} of ${card.suit} selected`)
+                        socket.emit('clickCard')
+                    }}
+                />
+            </div>
+        )
+    }
+}
+
+class Stacc extends Component {
+    render() {
+        const clicky = (event, card) => {
+            socket.emit('clickCard')
+            return Swal.fire(`${card.face} of ${card.suit} selected`)
+        }
+        return (
+            <div>
+                <CardStyles />
+                <Card
+                    suit="S"
+                    face="A"
+                    onClick={(e, card) => clicky(e, card)}
+                />
+                <Card
+                    suit="H"
+                    face="A"
+                    onClick={(e, card) => clicky(e, card)}
+                />
+                <Card
+                    suit="C"
+                    face="A"
+                    onClick={(e, card) => clicky(e, card)}
+                />
+                <Card
+                    suit="D"
+                    face="A"
+                    onClick={(e, card) => clicky(e, card)}
+                />
+            </div>
+        )
+    }
+}
+
+export default Room

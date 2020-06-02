@@ -1,70 +1,71 @@
-import React, {Component} from 'react';
-import Swal from 'sweetalert2';
-import { Redirect } from 'react-router-dom/cjs/react-router-dom.min';
+import React, { Component } from 'react'
+import Swal from 'sweetalert2'
+import socketIOClient from 'socket.io-client'
 
-class Lobby extends Component{
-  constructor(){
-    super();
-    this.state = {
-      inGame: false
-    };
-  }
-  componentDidMount() {
-    console.log(this.props);
-    this.setState({
-      inGame: true
-    })
-    this.props.socket.on('')
-  }  
-  render() {
-      const buttonStyle = {
-        width: "350px",
-        justifyContent: "center",
-        alignItems: "center",
-        fontSize: "20px",
-        fontFamily: "Josephin Sans",
-        background: "black", 
-        borderRadius: "5px",
-        color: "white",
-        margin: "10px 0px",
-        padding: "10px 60px",
-        cursor: "pointer"
-      }
+//I have a feeling we need to integrate this with room
+//to make use of only one socket at a time
+const socket = socketIOClient('http://127.0.0.1:5000')
 
-      return (
-        <div className="Lobby">
-        <img src={'https://static.guides.co/a/uploads/1063%2F4suits.png'}
-          alt="sad times"
-          className="image"
-        >
-          </img>
-          <br/>      
-          <button style={buttonStyle}
-          
-            onClick= {() => {Swal.fire({
-              title:'You are making your own room',
-              text: "Room code: "+Math.floor(Math.random()*10000).toString(10),
-              confirmButtonText: "Join room"
-            }).then(()=>window.location='./room')
-          }}>
-            Create Room
-          </button>
+class Lobby extends Component {
+    render() {
+        const buttonStyle = {
+            width: '350px',
+            justifyContent: 'center',
+            alignItems: 'center',
+            fontSize: '20px',
+            fontFamily: 'Josephin Sans',
+            background: 'black',
+            borderRadius: '5px',
+            color: 'white',
+            margin: '10px 0px',
+            padding: '10px 60px',
+            cursor: 'pointer',
+        }
 
-          <button style={buttonStyle}
-          
-            onClick = {() => {Swal.fire({
-              title: 'Please enter the room code to join:',
-              input: 'text',
-              confirmButtonText: 'Join',
-              showCancelButton: true,
-              showLoaderOnConfirm: true
-            })
-          }}>
-            Join Room
-          </button>
-        </div>
-      );
+        return (
+            <div className="Lobby">
+                <img
+                    src={'https://static.guides.co/a/uploads/1063%2F4suits.png'}
+                    alt="sad times"
+                    className="image"
+                ></img>
+                <br />
+                <button
+                    style={buttonStyle}
+                    onClick={() => {
+                        Swal.fire({
+                            title: 'You are making your own room',
+                            text: 'Room code: ' + socket.id,
+                            confirmButtonText: 'Join room',
+                        }).then(() => {
+                            socket.emit('new_room')
+                            window.location = './room'
+                        })
+                    }}
+                >
+                    Create Room
+                </button>
+
+                <button
+                    style={buttonStyle}
+                    onClick={() => {
+                        Swal.fire({
+                            title: 'Please enter the room code to join:',
+                            input: 'text',
+                            confirmButtonText: 'Join',
+                            showCancelButton: true,
+                            showLoaderOnConfirm: true,
+                        }).then((result) => {
+                            socket.emit('joinRoom', result)
+                            window.location = './room'
+                        })
+                    }}
+                >
+                    Join Room
+                </button>
+            </div>
+        )
     }
 }
 
-export default Lobby;
+export default Lobby

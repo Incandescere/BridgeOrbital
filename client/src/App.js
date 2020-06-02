@@ -1,82 +1,53 @@
-import React, { useState, useEffect, Component} from "react";
-import { BrowserRouter as Router, Route, Switch } from "react-router-dom";
-import jwt_decode from "jwt-decode";
-import setAuthToken from "./utils/setAuthToken";
-import { setCurrentUser, logoutUser } from "./actions/authActions";
-import { Provider } from "react-redux";
-import socketIOClient from "socket.io-client";
-import store from "./store";
-import Navbar from "./components/layout/Navbar";
-import Landing from "./components/layout/Landing";
-import Register from "./components/auth/Register";
-import Login from "./components/auth/Login";
-import PrivateRoute from "./components/private-route/PrivateRoute";
-import Dashboard from "./components/dashboard/Dashboard";
-import Lobby from "./components/lobby/lobby";
-import Room from "./components/room/room"
+import React from 'react'
+import { BrowserRouter as Router, Route, Switch } from 'react-router-dom'
+import jwt_decode from 'jwt-decode'
+import setAuthToken from './utils/setAuthToken'
+import { setCurrentUser, logoutUser } from './actions/authActions'
+import { Provider } from 'react-redux'
+
+import store from './store'
+import Navbar from './components/layout/Navbar'
+import Landing from './components/layout/Landing'
+import Register from './components/auth/Register'
+import Login from './components/auth/Login'
+import PrivateRoute from './components/private-route/PrivateRoute'
+import Dashboard from './components/dashboard/Dashboard'
+import Lobby from './components/lobby/lobby'
+import Room from './components/room/room'
 
 if (localStorage.jwtToken) {
-  const token = localStorage.jwtToken;
-  setAuthToken(token);
-  const decoded = jwt_decode(token);
-  store.dispatch(setCurrentUser(decoded));
-  const currentTime = Date.now() / 1000;
-  if (decoded.exp < currentTime) {
-    store.dispatch(logoutUser());
-    window.location.href = "./login";
-  }
+    const token = localStorage.jwtToken
+    setAuthToken(token)
+    const decoded = jwt_decode(token)
+    store.dispatch(setCurrentUser(decoded))
+    const currentTime = Date.now() / 1000
+    if (decoded.exp < currentTime) {
+        store.dispatch(logoutUser())
+        window.location.href = './login'
+    }
 }
-const ENDPOINT = "http://127.0.0.1:5000";
-
-class App extends Component {
-  constructor(props){
-    super(props);
-    this.state = {
-      endpoint: ENDPOINT,
-      socket: null,
-      roomId: null,
-      gameStarted: false
-    };
-  }
-
-  componentDidMount(){
-    const {endpoint} = this.state;
-    const socket = socketIOClient(endpoint);
-    socket.on("connected", data => {
-      console.log(data);
-      this.setState({socket: socket});
-    });
-  }
-
-  startGame = (data) => {
-    this.setState({
-      gameStarted: true,
-      roomId: data.roomId
-    })
-  }
-
-  opponentLeft =(data) => {
-    alert("Oponent Left");
-    this.setState({gameStarted: false, roomId: null});
-  }
-
-  render () {
-      return (
+function App() {
+    return (
         <Provider store={store}>
-          <Router>
-            <div className="App">
-              <Navbar />
-              <Route exact path="/" component={Landing} />
-              <Route exact path="/register" component={Register} />
-              <Route exact path="/login" component={Login} />
-              <Switch>
-                <PrivateRoute exact path="/dashboard" component={Dashboard} />            
-              </Switch>
-            </div>
-          </Router>
-        </Provider> 
-      );
-  }
+            <Router>
+                <div className="App">
+                    <Navbar />
+                    <Route exact path="/" component={Landing} />
+                    <Route exact path="/register" component={Register} />
+                    <Route exact path="/login" component={Login} />
+                    <Route exact path="/lobby" component={Lobby} />
+                    <Route exact path="/room" component={Room} />
+                    <Switch>
+                        <PrivateRoute
+                            exact
+                            path="/dashboard"
+                            component={Dashboard}
+                        />
+                    </Switch>
+                </div>
+            </Router>
+        </Provider>
+    )
 }
 
-export default App;
+export default App
