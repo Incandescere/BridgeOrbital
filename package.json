@@ -28,6 +28,7 @@
     "pubnub-react": "^2.0.0",
     "react-casino": "^0.2.6",
     "shortid": "^2.2.15",
+    "shufflr": "^2.0.8",
     "socket.io": "^2.3.0",
     "socket.io-client": "^2.3.0",
     "sweetalert2": "^9.13.1",
@@ -37,6 +38,7 @@
     "validator": "^13.0.0"
   },
   "devDependencies": {
+    "babel-eslint": "^10.1.0",
     "eslint-plugin-react-hooks": "^4.0.2",
     "nodemon": "^2.0.4"
   }

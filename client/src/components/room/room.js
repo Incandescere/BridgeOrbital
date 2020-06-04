@@ -2,6 +2,7 @@ import React, { Component } from 'react'
 import socketIOClient from 'socket.io-client'
 import Swal from 'sweetalert2'
 import { Card, HandStyles, CardStyles, Hand } from 'react-casino'
+import Decker from './deck.js';
 
 const ENDPOINT = 'http://127.0.0.1:5000'
 const socket = socketIOClient(ENDPOINT)
@@ -87,9 +88,13 @@ const Board = () => {
         cursor: 'pointer',
     }
 
+    const card = () => {
+        return <Card suit='S' face='A' />
+    }
+
     return (
         <div>
-            <h3>Welcome to room </h3>
+            <h3>Welcome to room</h3>
             <button
                 onClick={() =>
                     Swal.fire({
@@ -97,17 +102,16 @@ const Board = () => {
                     }).then(
                         socket.emit('startGame', socket.roomId)
                         // here we can socket.emit('startGame', roomId) and socket.emit('deal', roomId)
-                        // when we get there)
+                        // when we get there
                     )
                 }
                 style={buttonStyle}
             >
                 Start ​{' '}
             </button>
-            <Stacc />
-            <Handy />
+            <Decker />
         </div>
-    )
+    );
 }
 
 class Handy extends Component {
@@ -132,38 +136,6 @@ class Handy extends Component {
     }
 }
 
-class Stacc extends Component {
-    render() {
-        const clicky = (event, card) => {
-            socket.emit('clickCard')
-            return Swal.fire(`${card.face} of ${card.suit} selected`)
-        }
-        return (
-            <div>
-                <CardStyles />
-                <Card
-                    suit="S"
-                    face="A"
-                    onClick={(e, card) => clicky(e, card)}
-                />
-                <Card
-                    suit="H"
-                    face="A"
-                    onClick={(e, card) => clicky(e, card)}
-                />
-                <Card
-                    suit="C"
-                    face="A"
-                    onClick={(e, card) => clicky(e, card)}
-                />
-                <Card
-                    suit="D"
-                    face="A"
-                    onClick={(e, card) => clicky(e, card)}
-                />
-            </div>
-        )
-    }
-}
+
 
 export default Room

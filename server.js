@@ -21,10 +21,10 @@ let clientIds = []
 var roomPK = 1
 let rooms = []
 
-function syncRooms(clientId) {
-    ;(clientId ? io.to(clientId) : io).emit('nothing', rooms)
-    //idk what this does but it doesn't compile without this
-}
+// function syncRooms(clientId) {
+//     ; (clientId ? io.to(clientId) : io).emit('nothing', rooms)
+//     //idk what this does but it doesn't compile without this
+// }
 
 function newGame(roomId) {
     console.log(`Game has started finally in ${roomId}`)
@@ -33,19 +33,19 @@ function newGame(roomId) {
 io.on('connection', (socket) => {
     clientIds.push(socket.id)
     // add to the list of sockets in game right now
-    console.log('a user connected')
+    console.log('user connected', socket.id)
 
-    socket.on('view_rooms', () => {
-        syncRooms(client.id)
-        //hypothetical feature we could implement
-    })
+    // socket.on('view_rooms', () => {
+    //     syncRooms(client.id)
+    //     //hypothetical feature we could implement
+    // })
 
     socket.on('new_room', () => {
         const newRoomId = `Room_${roomPK++}`
         rooms.push(newRoomId)
         // adds a roomID to the array of roomIDs
         console.log(`Created a new room ${newRoomId}`)
-        syncRooms() // this part i am not sure tbh
+        //syncRooms() // this part i am not sure tbh
     })
 
     socket.on('joinRoom', (roomId) => {
@@ -76,6 +76,8 @@ io.on('connection', (socket) => {
         console.log('user disconnected')
         socket.leave(socket.roomId)
     })
+
+
 })
 
 http.listen(PORT, () => console.log(`I am connected yayy`))
