@@ -7,6 +7,24 @@ import socketIOClient from 'socket.io-client'
 const socket = socketIOClient('http://127.0.0.1:5000')
 
 class Lobby extends Component {
+    constructor() {
+        super()
+        this.state = {
+            socket: socket,
+            roomId: 0,
+        }
+    }
+
+    getRoomId = () => {
+        socket.emit('getRoomId')
+        socket.on('roomId', (roomId) => {
+            this.setState({
+                roomId: roomId,
+            })
+            console.log(this.roomId)
+        })
+    }
+
     render() {
         const buttonStyle = {
             width: '350px',
@@ -39,6 +57,8 @@ class Lobby extends Component {
                             confirmButtonText: 'Join room',
                         }).then(() => {
                             socket.emit('new_room')
+                            this.getRoomId()
+                            console.log(this.roomId)
                             window.location = './room'
                         })
                     }}

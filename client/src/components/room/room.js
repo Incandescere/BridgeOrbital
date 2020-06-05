@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import socketIOClient from 'socket.io-client'
 import Swal from 'sweetalert2'
 import { Card, HandStyles, CardStyles, Hand } from 'react-casino'
-import Decker from './deck.js';
+import Decker from './deck.js'
 
 const ENDPOINT = 'http://127.0.0.1:5000'
 const socket = socketIOClient(ENDPOINT)
@@ -89,7 +89,7 @@ const Board = () => {
     }
 
     const card = () => {
-        return <Card suit='S' face='A' />
+        return <Card suit="S" face="A" />
     }
 
     return (
@@ -111,7 +111,7 @@ const Board = () => {
             </button>
             <Decker />
         </div>
-    );
+    )
 }
 
 class Handy extends Component {
@@ -135,7 +135,5 @@ class Handy extends Component {
         )
     }
 }
-
-
 
 export default Room
