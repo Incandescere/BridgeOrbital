@@ -1,28 +1,16 @@
 import React, { Component } from 'react'
 import Swal from 'sweetalert2'
-import socketIOClient from 'socket.io-client'
+import openSocket from 'socket.io-client'
 
 //I have a feeling we need to integrate this with room
 //to make use of only one socket at a time
-const socket = socketIOClient('http://127.0.0.1:5000')
 
 class Lobby extends Component {
-    constructor() {
-        super()
+    constructor(props) {
+        super(props)
         this.state = {
-            socket: socket,
-            roomId: 0,
+            socket: openSocket('http://localhost:5000'),
         }
-    }
-
-    getRoomId = () => {
-        socket.emit('getRoomId')
-        socket.on('roomId', (roomId) => {
-            this.setState({
-                roomId: roomId,
-            })
-            console.log(this.roomId)
-        })
     }
 
     render() {
@@ -53,19 +41,16 @@ class Lobby extends Component {
                     onClick={() => {
                         Swal.fire({
                             title: 'You are making your own room',
-                            text: 'Room code: ' + socket.id,
+                            text: 'Room code: ' + this.state.socket.id,
                             confirmButtonText: 'Join room',
                         }).then(() => {
-                            socket.emit('new_room')
-                            this.getRoomId()
-                            console.log(this.roomId)
+                            this.state.socket.emit('new_room')
                             window.location = './room'
                         })
                     }}
                 >
                     Create Room
                 </button>
-
                 <button
                     style={buttonStyle}
                     onClick={() => {
@@ -76,8 +61,15 @@ class Lobby extends Component {
                             showCancelButton: true,
                             showLoaderOnConfirm: true,
                         }).then((result) => {
-                            socket.emit('joinRoom', result)
-                            window.location = './room'
+                            this.state.socket.emit('joinRoom', result)
+                            this.state.socket.on('NoRoom', () => {
+                                Swal.fire({
+                                    title: 'No such room exists',
+                                }).then((window.location = './lobby'))
+                            })
+                            this.state.socket.on('RoomFound', () => {
+                                window.location = './room'
+                            })
                         })
                     }}
                 >

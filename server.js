@@ -1,9 +1,8 @@
-// For logging in
 const mongoose = require('mongoose')
 const bodyParser = require('body-parser')
 const passport = require('passport')
 const users = require('./routes/api/users')
-
+var _ = require('lodash')
 // For sockets
 const express = require('express')
 const path = require('path')
@@ -31,19 +30,38 @@ io.on('connection', (socket) => {
     console.log('user connected', socket.id)
 
     socket.on('new_room', () => {
-        const newRoomId = roomPK++
-        rooms.push(newRoomId)
-        socket.join(newRoomId)
+        rooms.push(socket.id)
         // adds a roomID to the array of roomIDs
-        console.log(`Created a new room ${newRoomId}`)
+        console.log(`Created a new room ${socket.id.value}`)
+        printArray()
     })
 
+    function printArray() {
+        for (var i in rooms) {
+            console.log(rooms[i])
+        }
+    }
+
+    function inside(roomId) {
+        for (let room in rooms) {
+            // console.log(room, " ", roomId)
+            if (rooms[room] === roomId) {
+                return true
+            }
+        }
+        return false
+    }
     socket.on('joinRoom', (roomId) => {
-        socket.join(roomId, () => {
-            console.log(`Joined room ${roomId}`)
-            //Eventually we will need to check if it is a valid room
-            //being joined
-        })
+        if (inside(roomId.value)) {
+            socket.join(roomId, () => {
+                console.log(`Joined room ${roomId}`)
+            })
+            socket.emit('RoomFound', 'Room is here')
+        } else {
+            socket.emit('NoRoom', () => {})
+            console.log("Oops couldn't find room")
+        }
+        // rooms.map((room) => console.log('List of rooms:', room))
     })
 
     socket.on('startGame', (roomId) => {
@@ -64,7 +82,7 @@ io.on('connection', (socket) => {
 
     socket.on('disconnect', () => {
         console.log('user disconnected')
-        socket.leave(socket.roomId)
+        // socket.leave(socket.roomId)
     })
 
     socket.on('getRoomId', () => {

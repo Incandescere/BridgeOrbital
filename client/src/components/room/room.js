@@ -5,16 +5,19 @@ import { Card, HandStyles, CardStyles, Hand } from 'react-casino'
 import Decker from './deck.js'
 
 const ENDPOINT = 'http://127.0.0.1:5000'
-const socket = socketIOClient(ENDPOINT)
+// const socket = socketIOClient(ENDPOINT)
 
 class Room extends Component {
     constructor(props) {
+        // need to pass in socket and roomId from lobby as props here
+        // I tried using an extra variable in the state of lobby to
+        //check if a room has been found but its glitchy so i just
+        //reverted to the normal approach
         super(props)
         const {
             match: { params },
         } = props
-        socket.emit('joinRoom', params.roomId)
-        socket.emit('init_board', params.roomId)
+        // socket.emit('init_board', params.roomId)
     }
 
     state = {
@@ -22,43 +25,44 @@ class Room extends Component {
         selected: {},
         deck: [], // this one we need to link with backend and also react-casino
         collected: [],
-        roomId: socket.roomId,
+        // roomId: socket.roomId,
+        socket: socketIOClient(ENDPOINT),
     }
 
-    componentWillReceiveProps(nextProps) {
-        const {
-            match: { params },
-        } = this.props
-        const {
-            match: { params: nextParams },
-        } = nextProps
-        // i am not sure what exactly is going on here
-        if (params.roomId !== nextParams.roomId) {
-            socket.emit('join_room', nextParams.roomId)
-            // will need to trigger the game initial state here also
-        }
-    }
+    // componentWillReceiveProps(nextProps) {
+    //     const {
+    //         match: { params },
+    //     } = this.props
+    //     const {
+    //         match: { params: nextParams },
+    //     } = nextProps
+    //     // i am not sure what exactly is going on here
+    //     if (params.roomId !== nextParams.roomId) {
+    //         this.state.socket.emit('join_room', nextParams.roomId)
+    //         // will need to trigger the game initial state here also
+    //     }
+    // }
 
     clickCard = () => {
-        socket.emit('click_card')
+        this.state.socket.emit('click_card')
     }
 
     startGame = () => {
         const {
             match: { params },
         } = this.props
-        socket.emit('startGame', params.roomId)
+        this.state.socket.emit('startGame', params.roomId)
     }
 
     deal = () => {
         const {
             match: { params },
         } = this.props
-        socket.emit('deal', params.roomId)
+        this.state.socket.emit('deal', params.roomId)
     }
 
     render() {
-        const { board, selected } = this.state
+        const { board, selected, socket } = this.state
         return (
             <React.Fragment>
                 <div style={{ position: 'relative' }}>
@@ -66,6 +70,7 @@ class Room extends Component {
                         board={board}
                         selected={selected}
                         clickCard={this.clickCard}
+                        socket={socket}
                     />
                 </div>
             </React.Fragment>
@@ -73,7 +78,7 @@ class Room extends Component {
     }
 }
 
-const Board = () => {
+const Board = (props) => {
     const buttonStyle = {
         width: '750px',
         justifyContent: 'center',
@@ -100,7 +105,7 @@ const Board = () => {
                     Swal.fire({
                         title: 'Waiting for players to join',
                     }).then(
-                        socket.emit('startGame', socket.roomId)
+                        props.socket.emit('startGame', props.socket.Id)
                         // here we can socket.emit('startGame', roomId) and socket.emit('deal', roomId)
                         // when we get there
                     )
@@ -128,7 +133,7 @@ class Handy extends Component {
                     ]}
                     onClick={(e, card) => {
                         Swal.fire(`${card.face} of ${card.suit} selected`)
-                        socket.emit('clickCard')
+                        // props.socket.emit('clickCard')
                     }}
                 />
             </div>
