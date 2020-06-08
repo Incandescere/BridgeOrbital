@@ -27,7 +27,7 @@ function newGame(roomId) {
 io.on('connection', (socket) => {
     clientIds.push(socket.id)
     // add to the list of sockets in game right now
-    console.log('user connected', socket.id)
+    console.log(socket.id, ' connected')
 
     socket.on('new_room', () => {
         rooms.push(socket.id)
@@ -58,7 +58,7 @@ io.on('connection', (socket) => {
             })
             socket.emit('RoomFound', 'Room is here')
         } else {
-            socket.emit('NoRoom', () => {})
+            socket.emit('NoRoom', () => { })
             console.log("Oops couldn't find room")
         }
         // rooms.map((room) => console.log('List of rooms:', room))
@@ -81,7 +81,7 @@ io.on('connection', (socket) => {
     })
 
     socket.on('disconnect', () => {
-        console.log('user disconnected')
+        console.log(socket.id, ' disconnected')
         // socket.leave(socket.roomId)
     })
 

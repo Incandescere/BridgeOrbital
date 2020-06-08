@@ -13,6 +13,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@sweetalert2/theme-borderless": "^3.1.4",
     "@types/uuid": "^8.0.0",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.19.0",
@@ -33,7 +34,7 @@
     "shufflr": "^2.0.8",
     "socket.io": "^2.3.0",
     "socket.io-client": "^2.3.0",
-    "sweetalert2": "^9.13.1",
+    "sweetalert2": "^9.14.2",
     "sweetalert2-react-content": "^3.0.1",
     "typeface-dosis": "^1.1.4",
     "uuid": "^8.1.0",

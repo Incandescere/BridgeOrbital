@@ -12,7 +12,7 @@ import Register from './components/auth/Register'
 import Login from './components/auth/Login'
 import PrivateRoute from './components/private-route/PrivateRoute'
 import Dashboard from './components/dashboard/Dashboard'
-import Lobby from './components/lobby/lobby'
+import Lobby from './components/room/lobby'
 import Room from './components/room/room'
 
 if (localStorage.jwtToken) {
