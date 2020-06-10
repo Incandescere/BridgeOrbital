@@ -3,6 +3,7 @@ import socketIOClient from 'socket.io-client'
 import Swal from 'sweetalert2'
 import { Card, HandStyles, CardStyles, Hand } from 'react-casino'
 import { Hand1, Hand2, Hand3, Hand4 } from './deck.js'
+import equal from 'fast-deep-equal'
 
 const ENDPOINT = 'http://127.0.0.1:5000'
 // const socket = socketIOClient(ENDPOINT)
@@ -27,7 +28,6 @@ class Room extends Component {
             roomId: '',
             displayStart: true,
         }
-
     }
 
 
@@ -77,15 +77,33 @@ class Room extends Component {
                     showCancelButton: true,
                     showLoaderOnConfirm: true,
                 }).then((result) => {
+                    //queries to join room
                     this.state.socket.emit('joinRoom', result)
-                    this.state.socket.on('NoRoom', () => {
+
+                    //fails to find or join a room
+                    this.state.socket.on('NoRoom', (errmsg) => {
                         swalWithBootstrapButtons.fire({
-                            title: 'No such room exists',
+                            title: `${errmsg}\n Redirecting back to lobby`,
+                            timer: 2000
                         }).then((window.location = './room'))
                     })
-                    this.state.socket.on('RoomFound', () => {
-                        window.location = './room'
-                        //if room found, set state of roomId to 'text'
+
+                    //succeeds in finding and joining the room
+                    this.state.socket.on('RoomFound', (rmid) => {
+
+                        //window.location = './room'
+                        //(cannot do this, as the componentdidmount will trigger and break socket connection)
+
+                        // this.setState((state) => {
+                        //     roomId: result.value
+                        // })
+                        this.state.socket.emit('queryNumbers', rmid)
+                        this.state.socket.on('getNumbers', (inRoom) => {
+                            Swal.fire({
+                                title: `You have joined room ${rmid}, with ${inRoom} people`,
+                                timer: 2000
+                            })
+                        })
                     })
                 })
             } else if (
@@ -97,7 +115,7 @@ class Room extends Component {
                     text: 'Room code: ' + this.state.socket.id,
                     confirmButtonText: 'Join room',
                 }).then(() => {
-                    //this.state.socket.emit('new_room')
+                    this.state.socket.emit('new_room', this.state.socket.id)
                     //window.location = './room'
 
                     //not sure if this is entirely correct
@@ -128,8 +146,11 @@ class Room extends Component {
         this.state.socket.emit('deal', params.roomId)
     }
 
+
+
     render() {
         const { board, selected, socket } = this.state
+
         return (
             <div>
                 <RoomHud displayStart={true} />
@@ -142,17 +163,23 @@ class Room extends Component {
                             socket={socket}
                         />
                     </div>
+                    <button onClick={() => (this.state.socket.emit('displayCard', ("AS")))}>displayCard</button>
+                    <button onClick={
+                        () => this.state.socket.emit('numbers', this.state.socket.id)
+                    }>
+                        no of connections</button>
                 </React.Fragment>
             </div >
         )
     }
 }
+
 class RoomHud extends Component {
     constructor(props) {
         super(props)
         this.handleStartButton = this.handleStartButton.bind(this);
         this.handleWelcome = this.handleWelcome.bind(this);
-        this.state = { displayStart: true };
+        this.state = { displayStart: this.props.displayStart };
     }
 
     handleStartButton() {
@@ -208,7 +235,7 @@ const StartButton = () => {
             }
             style={buttonStyle}
         >
-            Start ​{ ' '}
+            Start ​{' '}
         </button >)
 }
 
@@ -231,17 +258,7 @@ class Welcome extends Component {
 const Board = () => {
     return (
         <div>
-            <br />
-            <br />
-            <br />
-            <Hand1 />
-            <br />
-            <Hand2 />
-            <br />
-            <Hand3 />
-            <br />
-            <Hand4 />
-            <br />
+
         </div >
     )
 }
