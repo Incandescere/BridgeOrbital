@@ -2,7 +2,6 @@ import React, { Component, useState } from 'react'
 import socketIOClient from 'socket.io-client'
 import Swal from 'sweetalert2'
 import { Card, HandStyles, CardStyles, Hand } from 'react-casino'
-import { Hand1, Hand2, Hand3, Hand4 } from './deck.js'
 import equal from 'fast-deep-equal'
 
 const ENDPOINT = 'http://127.0.0.1:5000'
@@ -79,6 +78,7 @@ const RoomConfigurator = (socket) => {
                     })
                     .then(() => {
                         socket.emit('new_room')
+                        socket.emit('join', this.state.socket.id)
                         //window.location = './room'
 
                         //not sure if this is entirely correct
@@ -124,15 +124,15 @@ class Room extends Component {
         this.state.socket.emit('startGame', params.roomId)
     }
 
-    deal = () => {
-        const {
-            match: { params },
-        } = this.props
-        this.state.socket.emit('deal', params.roomId)
-    }
-
     render() {
         const { board, selected, socket, roomId } = this.state
+
+        //========================================================================
+        this.state.socket.on('dealHand', (hand) => {
+            console.log(`recd' hand of ${hand}`)
+        })
+        //========================================================================
+
         const buttonStyle = {
             width: '350px',
             justifyContent: 'center',
@@ -178,7 +178,7 @@ class Room extends Component {
                             this.state.socket.emit('joinRoom', result)
                             this.state.socket.on('RoomFound', () => {
                                 this.setState({
-                                    roomId: result,
+                                    roomId: result.value,
                                 })
                             })
                             this.state.socket.on('NoRoom', (errmsg) => {
@@ -192,7 +192,7 @@ class Room extends Component {
                 >
                     Join Room
                 </button>
-                <RoomHud displayStart={true} socket={this.state.socket} />
+                <RoomHud displayStart={true} socket={this.state.socket} roomId={this.state.roomId} />
                 <React.Fragment>
                     <div style={{ position: 'relative' }}>
                         <Board
@@ -204,24 +204,14 @@ class Room extends Component {
                         />
                     </div>
                     <button
+                        style={buttonStyle}
                         onClick={() =>
-                            this.state.socket.emit('displayCard', 'AS')
-                        }
-                    >
-                        displayCard
-                    </button>
-                    <button
-                        onClick={() =>
-                            this.state.socket.emit(
-                                'queryNumbers',
-                                this.state.roomId
-                            )
-                        }
-                    >
-                        no of connections
+                            this.state.socket.emit('dealQuery', this.state.roomId)
+                        }>
+                        Deal hands
                     </button>
                 </React.Fragment>
-            </div>
+            </div >
         )
     }
 }
@@ -259,32 +249,45 @@ class RoomHud extends Component {
         } else {
             rendered = <Welcome roomId={this.state.roomId} />
         }
-        return <div>{rendered}</div>
+        return (
+            <div>
+                {rendered}
+            </div>
+        )
     }
 }
 
-const StartButton = (props) => {
-    const buttonStyle = {
-        width: '750px',
-        justifyContent: 'center',
-        alignItems: 'center',
-        fontSize: '20px',
-        fontFamily: 'Josephin Sans',
-        background: 'black',
-        borderRadius: '5px',
-        color: 'white',
-        margin: '10px 0px',
-        padding: '10px 60px',
-        cursor: 'pointer',
+class StartButton extends Component {
+    constructor(props) {
+        super(props)
+        this.state = {
+            roomId: this.props.roomId,
+            socket: this.props.socket
+        }
     }
-    return (
-        <button
-            onClick={() => props.socket.emit('startGame', props.roomId)}
-            style={buttonStyle}
-        >
-            Start ​{' '}
-        </button>
-    )
+    render() {
+        const buttonStyle = {
+            width: '750px',
+            justifyContent: 'center',
+            alignItems: 'center',
+            fontSize: '20px',
+            fontFamily: 'Josephin Sans',
+            background: 'black',
+            borderRadius: '5px',
+            color: 'white',
+            margin: '10px 0px',
+            padding: '10px 60px',
+            cursor: 'pointer',
+        }
+        return (
+            <button
+                onClick={() => this.state.socket.emit('startGame', this.state.roomId)}
+                style={buttonStyle}
+            >
+                Start
+            </button>
+        )
+    }
 }
 
 class Welcome extends Component {
