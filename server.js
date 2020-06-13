@@ -22,35 +22,84 @@ const { cardsInitialState, startNewGame } = require('./client/src/util')
 let clientIds = []
 let rooms = []
 
-//for game logic 
+//for game logic
 //=================================================================================
-let deck = ([
-    "AS", "2S", "3S", "4S", "5S", "6S", "7S", "8S", "9S", "TS", "JS", "QS", "KS",
-    "AH", "2H", "3H", "4H", "5H", "6H", "7H", "8H", "9H", "TH", "JH", "QH", "KH",
-    "AC", "2C", "3C", "4C", "5C", "6C", "7C", "8C", "9C", "TC", "JC", "QC", "KC",
-    "AD", "2D", "3D", "4D", "5D", "6D", "7D", "8D", "9D", "TD", "JD", "QD", "KD"
-])
+let deck = [
+    'AS',
+    '2S',
+    '3S',
+    '4S',
+    '5S',
+    '6S',
+    '7S',
+    '8S',
+    '9S',
+    'TS',
+    'JS',
+    'QS',
+    'KS',
+    'AH',
+    '2H',
+    '3H',
+    '4H',
+    '5H',
+    '6H',
+    '7H',
+    '8H',
+    '9H',
+    'TH',
+    'JH',
+    'QH',
+    'KH',
+    'AC',
+    '2C',
+    '3C',
+    '4C',
+    '5C',
+    '6C',
+    '7C',
+    '8C',
+    '9C',
+    'TC',
+    'JC',
+    'QC',
+    'KC',
+    'AD',
+    '2D',
+    '3D',
+    '4D',
+    '5D',
+    '6D',
+    '7D',
+    '8D',
+    '9D',
+    'TD',
+    'JD',
+    'QD',
+    'KD',
+]
 
 function shuffle(array) {
-    var currentIndex = array.length, temporaryValue, randomIndex;
+    var currentIndex = array.length,
+        temporaryValue,
+        randomIndex
 
     // While there remain elements to shuffle...
     while (0 !== currentIndex) {
-
         // Pick a remaining element...
-        randomIndex = Math.floor(Math.random() * currentIndex);
-        currentIndex -= 1;
+        randomIndex = Math.floor(Math.random() * currentIndex)
+        currentIndex -= 1
 
         // And swap it with the current element.
-        temporaryValue = array[currentIndex];
-        array[currentIndex] = array[randomIndex];
-        array[randomIndex] = temporaryValue;
+        temporaryValue = array[currentIndex]
+        array[currentIndex] = array[randomIndex]
+        array[randomIndex] = temporaryValue
     }
 
-    return array;
+    return array
 }
 
-shuffle(deck);
+shuffle(deck)
 const hand0 = deck.slice(0, 13)
 const hand1 = deck.slice(13, 26)
 const hand2 = deck.slice(26, 39)
@@ -130,20 +179,26 @@ io.on('connection', (socket) => {
         //var sockets = io.in(rmid)
         var handArr = [hand0, hand1, hand2, hand3]
         var handNo = 0
-        io.of('/').adapter.clients([rmid], (err, clients) => {
-            socket.to(clients[0]).emit('dealHand', hand0)
-            socket.to(clients[1]).emit('dealHand', hand1)
-            socket.to(clients[2]).emit('dealHand', hand2)
-            socket.to(clients[3]).emit('dealHand', hand3)
+        // console.log(rmid)
+        // console.log(io.sockets.adapter.rooms[rmid])
+        if (io.sockets.adapter.rooms[rmid].length == 4) {
+            io.of('/').adapter.clients([rmid], (err, clients) => {
+                io.to(clients[0]).emit('dealHand', hand0)
+                io.to(clients[1]).emit('dealHand', hand1)
+                io.to(clients[2]).emit('dealHand', hand2)
+                io.to(clients[3]).emit('dealHand', hand3)
 
-            console.log(`All clients\n${clients}`)
+                console.log(`All clients\n${clients}`)
 
-            console.log(clients[0] + " => " + hand0)
-            console.log(clients[1] + " => " + hand1)
-            console.log(clients[2] + " => " + hand2)
-            console.log(clients[3] + " => " + hand3)
-        });
-
+                console.log(clients[0] + ' => ' + hand0)
+                console.log(clients[1] + ' => ' + hand1)
+                console.log(clients[2] + ' => ' + hand2)
+                console.log(clients[3] + ' => ' + hand3)
+            })
+        } else {
+            io.sockets.in(rmid).emit('playersNeeded')
+            console.log('Not enough players yet')
+        }
     })
     //======================================================
 
@@ -153,7 +208,10 @@ io.on('connection', (socket) => {
 
     socket.on('displayCard', (str) => {
         console.log(
-            `displayCard() on server called, card is ${str.slice(0, 1)} of ${str.slice(1)}`
+            `displayCard() on server called, card is ${str.slice(
+                0,
+                1
+            )} of ${str.slice(1)}`
         )
     })
 

@@ -124,13 +124,28 @@ class Room extends Component {
         this.state.socket.emit('startGame', params.roomId)
     }
 
+    dealQuery = () => {
+        this.state.socket.emit('dealQuery', this.state.roomId)
+        this.state.socket.on('dealHand', (hand) => {
+            this.setState({
+                deck: hand,
+            })
+            console.log(hand)
+        })
+        this.state.socket.on('playersNeeded', () => {
+            Swal.fire({
+                title: 'Not enough players yet',
+            })
+        })
+    }
+
     render() {
         const { board, selected, socket, roomId } = this.state
 
         //========================================================================
-        this.state.socket.on('dealHand', (hand) => {
-            console.log(`recd' hand of ${hand}`)
-        })
+        // this.state.socket.on('dealHand', (hand) => {
+        //     console.log(`recd' hand of ${hand}`)
+        // })
         //========================================================================
 
         const buttonStyle = {
@@ -192,7 +207,11 @@ class Room extends Component {
                 >
                     Join Room
                 </button>
-                <RoomHud displayStart={true} socket={this.state.socket} roomId={this.state.roomId} />
+                <RoomHud
+                    displayStart={true}
+                    socket={this.state.socket}
+                    roomId={this.state.roomId}
+                />
                 <React.Fragment>
                     <div style={{ position: 'relative' }}>
                         <Board
@@ -203,15 +222,11 @@ class Room extends Component {
                             roomId={roomId}
                         />
                     </div>
-                    <button
-                        style={buttonStyle}
-                        onClick={() =>
-                            this.state.socket.emit('dealQuery', this.state.roomId)
-                        }>
+                    <button style={buttonStyle} onClick={this.dealQuery}>
                         Deal hands
                     </button>
                 </React.Fragment>
-            </div >
+            </div>
         )
     }
 }
@@ -249,11 +264,7 @@ class RoomHud extends Component {
         } else {
             rendered = <Welcome roomId={this.state.roomId} />
         }
-        return (
-            <div>
-                {rendered}
-            </div>
-        )
+        return <div>{rendered}</div>
     }
 }
 
@@ -262,7 +273,7 @@ class StartButton extends Component {
         super(props)
         this.state = {
             roomId: this.props.roomId,
-            socket: this.props.socket
+            socket: this.props.socket,
         }
     }
     render() {
@@ -281,7 +292,9 @@ class StartButton extends Component {
         }
         return (
             <button
-                onClick={() => this.state.socket.emit('startGame', this.state.roomId)}
+                onClick={() =>
+                    this.state.socket.emit('startGame', this.state.roomId)
+                }
                 style={buttonStyle}
             >
                 Start

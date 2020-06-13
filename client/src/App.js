@@ -12,7 +12,6 @@ import Register from './components/auth/Register'
 import Login from './components/auth/Login'
 import PrivateRoute from './components/private-route/PrivateRoute'
 import Dashboard from './components/dashboard/Dashboard'
-import Lobby from './components/room/lobby'
 import Room from './components/room/room'
 
 if (localStorage.jwtToken) {
@@ -35,7 +34,7 @@ function App() {
                     <Route exact path="/" component={Landing} />
                     <Route exact path="/register" component={Register} />
                     <Route exact path="/login" component={Login} />
-                    <Route exact path="/lobby" component={Lobby} />
+                    {/* <Route exact path="/lobby" component={Lobby} /> */}
                     <Route exact path="/room" component={Room} />
                     <Switch>
                         <PrivateRoute
