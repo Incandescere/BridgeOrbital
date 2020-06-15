@@ -18,6 +18,7 @@ app.use(index)
 
 //For the rooms
 const { cardsInitialState, startNewGame } = require('./client/src/util')
+const { default: Swal } = require('sweetalert2')
 // in the tut they use this to modify states and keep track
 let clientIds = []
 let rooms = []
@@ -176,19 +177,12 @@ io.on('connection', (socket) => {
 
     //======================================================
     socket.on('dealQuery', (rmid) => {
-        //var sockets = io.in(rmid)
-        var handArr = [hand0, hand1, hand2, hand3]
-        var handNo = 0
-        // console.log(rmid)
-        // console.log(io.sockets.adapter.rooms[rmid])
         if (io.sockets.adapter.rooms[rmid].length == 4) {
             io.of('/').adapter.clients([rmid], (err, clients) => {
                 io.to(clients[0]).emit('dealHand', hand0)
                 io.to(clients[1]).emit('dealHand', hand1)
                 io.to(clients[2]).emit('dealHand', hand2)
                 io.to(clients[3]).emit('dealHand', hand3)
-
-                console.log(`All clients\n${clients}`)
 
                 console.log(clients[0] + ' => ' + hand0)
                 console.log(clients[1] + ' => ' + hand1)
@@ -220,8 +214,9 @@ io.on('connection', (socket) => {
         socket.emit('getNumbers', io.sockets.adapter.rooms[rmid].length)
     })
 
-    socket.on('clickCard', () => {
-        console.log('Clicking whatever the fck I want') // this should be like a big part of our code
+    socket.on('clickedCard', (card) => {
+        socket.emit('cardResponse', card)
+        //console.log(card)
     })
 
     socket.on('leaveRoom', (roomId) => {

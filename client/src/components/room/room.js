@@ -101,11 +101,12 @@ class Room extends Component {
         this.state = {
             board: [],
             selected: {},
-            deck: [], // this one we need to link with backend and also react-casino
-            collected: [],
+            deck: {}, // this one we need to link with backend and also react-casino
+            collected: {},
             socket: socketIOClient(ENDPOINT),
             roomId: '',
             displayStart: true,
+            hand: [],  //represents hand of client
         }
     }
 
@@ -128,9 +129,9 @@ class Room extends Component {
         this.state.socket.emit('dealQuery', this.state.roomId)
         this.state.socket.on('dealHand', (hand) => {
             this.setState({
-                deck: hand,
+                hand: hand,
             })
-            console.log(hand)
+            console.log(`${this.state.socket.id} rec\'d hando of ${this.state.hand}`)
         })
         this.state.socket.on('playersNeeded', () => {
             Swal.fire({
@@ -140,7 +141,7 @@ class Room extends Component {
     }
 
     render() {
-        const { board, selected, socket, roomId } = this.state
+        const { board, selected, socket, roomId, hand } = this.state
 
         //========================================================================
         // this.state.socket.on('dealHand', (hand) => {
@@ -220,6 +221,7 @@ class Room extends Component {
                             clickCard={this.clickCard}
                             socket={socket}
                             roomId={roomId}
+                            hand={this.state.hand}
                         />
                     </div>
                     <button style={buttonStyle} onClick={this.dealQuery}>
@@ -278,7 +280,7 @@ class StartButton extends Component {
     }
     render() {
         const buttonStyle = {
-            width: '750px',
+            width: '700px',
             justifyContent: 'center',
             alignItems: 'center',
             fontSize: '20px',
@@ -303,19 +305,44 @@ class StartButton extends Component {
     }
 }
 
-class Welcome extends Component {
-    constructor(props) {
-        super(props)
-        this.state = { displayStart: false }
-    }
-    render() {
-        const roomnum = this.state.roomId
-        return <h3>Welcome to room {roomnum}</h3>
-    }
+
+const Welcome = (props) => {
+    const Message = "Welcome to room " + this.props.roomId
+    return (
+        <h3>
+            <Message />
+        </h3>
+    )
 }
 
-const Board = () => {
-    return <div></div>
+const Board = (props) => {
+
+    props.socket.on('cardResponse', (card) => {
+        Swal.fire({
+            title: `${card.slice(0, 1)} of ${card.slice(1)} selected`
+        })
+    })
+
+    function showCards(hand, result) {
+        hand.forEach(card => result.push(
+            <Card
+                face={card.slice(0, 1)}
+                suit={card.slice(1)}
+                onClick={(e, card) =>
+                    props.socket.emit('clickedCard', (card.face + card.suit))
+                } />
+        ))
+    }
+
+    let result = []
+    showCards(props.hand, result)
+    let PepeHands = () => result
+
+    return (
+        <div>
+            <PepeHands />
+        </div>
+    )
 }
 
 export default Room
