@@ -2,7 +2,7 @@ import React, { Component, useState } from 'react'
 import socketIOClient from 'socket.io-client'
 import Swal from 'sweetalert2'
 import { Card, HandStyles, CardStyles, Hand } from 'react-casino'
-import equal from 'fast-deep-equal'
+import socket from 'socket.io-client/lib/socket'
 
 const ENDPOINT = 'http://127.0.0.1:5000'
 
@@ -107,6 +107,7 @@ class Room extends Component {
             roomId: '',
             displayStart: true,
             hand: [],  //represents hand of client
+            currCall: '',
         }
     }
 
@@ -139,6 +140,30 @@ class Room extends Component {
             })
         })
     }
+
+    //=======================================================================================
+    callProcess = () => {
+        //console.log('starting call process')
+        this.state.socket.emit('callStart', this.state.roomId)
+
+        this.state.socket.on('startCallSuccess', () => {
+            Swal.fire({
+                title: "start calling!",
+                input: 'text',
+            }).then((result) => {
+                this.state.socket.emit('callResult', (this.state.socket.id + " " + this.state.roomId + " " + result.value))
+                this.state.currCall = this.state.socket.id + " " + result.value
+            })
+        })
+
+        this.state.socket.on('startCallFail', () => {
+            Swal.fire({
+                title: 'Cannot start calling, not enough people',
+                timer: 2000
+            })
+        })
+    }
+    //=======================================================================================
 
     render() {
         const { board, selected, socket, roomId, hand } = this.state
@@ -226,6 +251,12 @@ class Room extends Component {
                     </div>
                     <button style={buttonStyle} onClick={this.dealQuery}>
                         Deal hands
+                    </button>
+                    <button
+                        style={buttonStyle}
+                        onClick={this.callProcess}
+                    >
+                        Begin calling
                     </button>
                 </React.Fragment>
             </div>
@@ -318,8 +349,9 @@ const Welcome = (props) => {
 const Board = (props) => {
 
     props.socket.on('cardResponse', (card) => {
+
         Swal.fire({
-            title: `${card.slice(0, 1)} of ${card.slice(1)} selected`
+            title: `Card ${JSON.stringify(card)} selected`
         })
     })
 
@@ -329,7 +361,7 @@ const Board = (props) => {
                 face={card.slice(0, 1)}
                 suit={card.slice(1)}
                 onClick={(e, card) =>
-                    props.socket.emit('clickedCard', (card.face + card.suit))
+                    props.socket.emit('clickedCard', (card))
                 } />
         ))
     }

@@ -11,14 +11,12 @@ const io = require('socket.io')(http)
 const PORT = process.env.PORT || 5000
 const index = require('./routes/index')
 
-//for game logic
-//const deck = require('./gamelogicks/deck.mjs')
-
 app.use(index)
 
 //For the rooms
 const { cardsInitialState, startNewGame } = require('./client/src/util')
 const { default: Swal } = require('sweetalert2')
+const { secretOrKey } = require('./config/keys')
 // in the tut they use this to modify states and keep track
 let clientIds = []
 let rooms = []
@@ -26,58 +24,10 @@ let rooms = []
 //for game logic
 //=================================================================================
 let deck = [
-    'AS',
-    '2S',
-    '3S',
-    '4S',
-    '5S',
-    '6S',
-    '7S',
-    '8S',
-    '9S',
-    'TS',
-    'JS',
-    'QS',
-    'KS',
-    'AH',
-    '2H',
-    '3H',
-    '4H',
-    '5H',
-    '6H',
-    '7H',
-    '8H',
-    '9H',
-    'TH',
-    'JH',
-    'QH',
-    'KH',
-    'AC',
-    '2C',
-    '3C',
-    '4C',
-    '5C',
-    '6C',
-    '7C',
-    '8C',
-    '9C',
-    'TC',
-    'JC',
-    'QC',
-    'KC',
-    'AD',
-    '2D',
-    '3D',
-    '4D',
-    '5D',
-    '6D',
-    '7D',
-    '8D',
-    '9D',
-    'TD',
-    'JD',
-    'QD',
-    'KD',
+    'AS', '2S', '3S', '4S', '5S', '6S', '7S', '8S', '9S', 'TS', 'JS', 'QS', 'KS',
+    'AH', '2H', '3H', '4H', '5H', '6H', '7H', '8H', '9H', 'TH', 'JH', 'QH', 'KH',
+    'AC', '2C', '3C', '4C', '5C', '6C', '7C', '8C', '9C', 'TC', 'JC', 'QC', 'KC',
+    'AD', '2D', '3D', '4D', '5D', '6D', '7D', '8D', '9D', 'TD', 'JD', 'QD', 'KD',
 ]
 
 function shuffle(array) {
@@ -96,7 +46,6 @@ function shuffle(array) {
         array[currentIndex] = array[randomIndex]
         array[randomIndex] = temporaryValue
     }
-
     return array
 }
 
@@ -137,6 +86,10 @@ function canJoin(rmid) {
     return room.length < 4
 }
 
+//for calling
+let currPlayer = 0
+var callLog = []
+
 io.on('connection', (socket) => {
     clientIds.push(socket.id)
     // add to the list of sockets in game right now
@@ -162,14 +115,10 @@ io.on('connection', (socket) => {
             let errmsg = ''
             if (!inside(roomId.value)) {
                 errmsg = 'Room does not exist'
-                console.log(
-                    `Server emits: Oops room ${roomId.value} does not exist`
-                )
+                console.log(`Server emits: Oops room ${roomId.value} does not exist`)
             } else {
                 errmsg = 'Room is full'
-                console.log(
-                    `Server emits: Oops room ${roomId.value} is filled to the brim`
-                )
+                console.log(`Server emits: Oops room ${roomId.value} is filled to the brim`)
             }
             socket.emit('NoRoom', errmsg)
         }
@@ -202,10 +151,7 @@ io.on('connection', (socket) => {
 
     socket.on('displayCard', (str) => {
         console.log(
-            `displayCard() on server called, card is ${str.slice(
-                0,
-                1
-            )} of ${str.slice(1)}`
+            `displayCard() on server called, card is ${str.slice(0, 1)} of ${str.slice(1)}`
         )
     })
 
@@ -239,7 +185,53 @@ io.on('connection', (socket) => {
     socket.on('print', (result) => {
         console.log(`${result}`)
     })
+    //calling testing 
+    //=======================================================================
+    // socket.on('callQuery', rmid => {
+    //     if (io.sockets.adapter.rooms[rmid].length == 4) {
+    //         io.of('/').adapter.clients([rmid], (err, clients) => {
+    //             const msg = "You are calling"
+    //             io.to(clients[currPlayer % 4]).emit('callResponse', msg)
+    //             currPlayer++
+    //         })
+    //     }
+    // })
+
+
+    // socket.on('playerCall', (playerid, result) =>
+    //     // callLog.push(playerid + result)
+    //     console.log(playerid + " called " + result)
+    // )
+    //=======================================================================
+
+    socket.on('callStart', (rmid) => {
+        if (io.sockets.adapter.rooms[rmid].length === 4) {
+            io.of('/').adapter.clients([rmid], (err, clients) => {
+                io.to(clients[currPlayer % 4]).emit('startCallSuccess')
+                //currPlayer=0
+                currPlayer++
+            })
+        } else {
+            io.emit('startCallFail')
+        }
+    })
+
+    socket.on('callResult', (results) => {
+        //const callLog = []
+        callLog.push(results)
+        console.log(callLog.toString())
+        const rmid = results.slice(21, 41)
+        console.log(`roomID: ${rmid}`)
+        io.of('/').adapter.clients([rmid], (err, clients) => {
+            const msg = "start calling!!"
+            console.log((currPlayer % 4) + " next is: " + clients[(currPlayer % 4)])
+            io.to(clients[(currPlayer % 4)]).emit('startCallSuccess')
+            //currPlayer=0
+            currPlayer++
+        })
+    })
 })
+
 
 http.listen(PORT, () => console.log(`I am connected yayy`))
 
@@ -261,6 +253,5 @@ mongoose
 app.use(passport.initialize())
 // Passport config
 require('./config/passport')(passport)
-
 app.use('/api/users', users)
 app.listen(PORT, () => console.log(`Server up and running on port ${PORT} !`))
