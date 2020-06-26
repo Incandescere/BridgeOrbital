@@ -86,11 +86,8 @@ function canJoin(rmid) {
     return room.length < 4
 }
 
-//for calling
-let currPlayer = 0
-var callLog = []
-
 io.on('connection', (socket) => {
+
     clientIds.push(socket.id)
     // add to the list of sockets in game right now
     console.log(socket.id, ' connected')
@@ -140,13 +137,20 @@ io.on('connection', (socket) => {
             })
         } else {
             io.sockets.in(rmid).emit('playersNeeded')
-            console.log('Not enough players yet')
+            //console.log('Not enough players yet')
         }
     })
     //======================================================
 
-    socket.on('startGame', (roomId) => {
-        newGame(roomId) // we need some game logic here
+    //transmits ready status for one person to all
+    socket.on('readyToStart', (result) => {
+        const user = result.slice(0, 20)
+        const rmid = result.slice(21, 40)
+        const isReadysize = result.slice(41,)
+        if (isReadySize === 3) {
+            io.to(user).emit('updateNeedToWin')
+        }
+        io.in(rmid).emit('isReady', user)
     })
 
     socket.on('displayCard', (str) => {
@@ -156,12 +160,21 @@ io.on('connection', (socket) => {
     })
 
     socket.on('queryNumbers', (rmid) => {
-        console.log(io.sockets.adapter.rooms[rmid].length)
+        //console.log(io.sockets.adapter.rooms[rmid].length)
         socket.emit('getNumbers', io.sockets.adapter.rooms[rmid].length)
     })
 
-    socket.on('clickedCard', (card) => {
-        socket.emit('cardResponse', card)
+    socket.on('clickedCard', (result) => {
+        const rmid = result.slice(0, 20)
+        const card = result.slice(20,)
+        //console.log(rmid)
+        //console.log(card)
+        // io.of('/').adapter.clients([rmid], (err, clients) => {
+        //     clients.forEach(client => {
+        //         socket.to(client).emit('cardResponse', card)
+        //     })
+        // })
+        io.in(rmid).emit('cardResponse', card)
         //console.log(card)
     })
 
@@ -196,42 +209,52 @@ io.on('connection', (socket) => {
     //         })
     //     }
     // })
-
-
+    //
     // socket.on('playerCall', (playerid, result) =>
     //     // callLog.push(playerid + result)
     //     console.log(playerid + " called " + result)
     // )
     //=======================================================================
 
-    socket.on('callStart', (rmid) => {
+    socket.on('callStart', (result) => {
+
+        console.log(result)
+        const rmid = result.slice(0, 20)
+        const socketid = result.slice(21,)
+
+        console.log("roomid: " + rmid + " socketid: " + socketid)
+
+        //if everyone is in the room
         if (io.sockets.adapter.rooms[rmid].length === 4) {
-            io.of('/').adapter.clients([rmid], (err, clients) => {
-                io.to(clients[currPlayer % 4]).emit('startCallSuccess')
-                //currPlayer=0
-                currPlayer++
-            })
+            // io.of('/').adapter.clients([rmid], (err, clients) => {
+            //     io.emit('startCallSuccess')
+            // })
+            io.to(socketid).emit('startCallSuccess')
         } else {
             io.emit('startCallFail')
         }
     })
 
-    socket.on('callResult', (results) => {
-        //const callLog = []
-        callLog.push(results)
-        console.log(callLog.toString())
-        const rmid = results.slice(21, 41)
-        console.log(`roomID: ${rmid}`)
-        io.of('/').adapter.clients([rmid], (err, clients) => {
-            const msg = "start calling!!"
-            console.log((currPlayer % 4) + " next is: " + clients[(currPlayer % 4)])
-            io.to(clients[(currPlayer % 4)]).emit('startCallSuccess')
-            //currPlayer=0
-            currPlayer++
-        })
+    socket.on('callResult', (result) => {
+
+        const userid = result.slice(0, 21)
+        const rmid = result.slice(21, 41)
+        const called = result.slice(42,)
+
+        //console.log(result + " :" + rmid + ": " + called)
+
+        // io.of('/').adapter.clients([rmid], (err, clients) => {
+        //     clients.forEach(client => {
+        //         socket.to(client).emit('updateHighest', called)
+        //     })
+        // })
+        io.in(rmid).emit('updateHighest', userid + " " + called)
+    })
+
+    socket.on('startGame', rmid => {
+        console.log(`Game has started in ${rmid}`)
     })
 })
-
 
 http.listen(PORT, () => console.log(`I am connected yayy`))
 
