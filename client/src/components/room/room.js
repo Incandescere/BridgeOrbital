@@ -46,9 +46,9 @@ class Room extends Component {
 
         this.state = {
             board: [],
-            selected: {},
+            selected: new Set(),
             deck: {}, // this one we need to link with backend and also react-casino
-            collected: {},
+            collected: new Set(),
             socket: socketIOClient(ENDPOINT),
             roomId: '',
             displayStart: true,
@@ -64,29 +64,88 @@ class Room extends Component {
     }
 
 
-    // componentDidMount() {
-    //     this.RoomConfigurator()
-    // }
 
-    clickCard = () => {
-        this.state.socket.emit('click_card')
-    }
+    componentDidMount() {
+        //this.RoomConfigurator()
 
-    startGame = (rmid) => {
-        const {
-            match: { params },
-        } = this.props
-        this.state.socket.emit('startGame', rmid)
-    }
+        //copied, bides time in ms
+        function sleep(time) {
+            return new Promise((resolve) => setTimeout(resolve, time));
+        }
 
-    dealQuery = () => {
-        this.state.socket.emit('dealQuery', this.state.roomId)
+        //previously in dealQuery
         this.state.socket.on('dealHand', (hand) => {
             this.setState({
                 hand: hand,
             })
             console.log(`${this.state.socket.id} rec'd hando of ${this.state.hand}`)
         })
+
+
+        //previously in dealHand
+        this.state.socket.on('cardSelected', (userFS) => {
+            console.log(userFS)
+            //setState for the selecteed cards
+            this.setState({
+                selected: this.state.selected.add(userFS)
+            })
+
+            //delays 3000 ms then checks if there are 4 cards in collected, if so, evaluate and assign winner
+            sleep(3000).then(() => {
+                if (this.state.selected.size === 4) {
+                    //insert logic for set winner here
+                    const winningSuit = this.state.currHighest % 5
+
+                    // const user1
+                    // const user2
+                    // //find some way to get the ids of the winner and the partner
+                    // this.state.socket.emit('winsSet', user1 + user2)
+
+
+                    //clears the set selected and adds the elements to the set collected
+                    let newCollected = this.state.collected
+                    for (let card of this.state.selected.values()) {
+                        newCollected.add(card)
+                    }
+                    console.log(newCollected)
+                    this.setState({
+                        collected: newCollected,
+                        selected: new Set()
+                    })
+                }
+            })
+        })
+
+        this.state.socket.on('updateNTW', () => {
+            this.setState({
+                needToWin: this.state.needToWin - 1
+            })
+        })
+
+    }
+
+    clickCard = (e, card) => {
+        const cardString = JSON.stringify(card)
+        console.log(cardString)
+        const faes = cardString.slice(9, 10)
+        const soot = cardString.slice(20, 21)
+        this.state.socket.emit('clickedCard', (this.state.roomId + faes + soot))
+        const selectedRemoved = this.state.hand.filter(thing => thing !== (faes + soot))
+        this.setState({
+            hand: selectedRemoved
+        })
+    }
+
+    startGame = (rmid, lastuser) => {
+        const {
+            match: { params },
+        } = this.props
+        this.state.socket.emit('startGame', rmid + " " + lastuser)
+    }
+
+    dealQuery = () => {
+        this.state.socket.emit('dealQuery', this.state.roomId)
+
         this.state.socket.on('playersNeeded', () => {
             Swal.fire({
                 title: 'Not enough players yet',
@@ -94,11 +153,45 @@ class Room extends Component {
         })
     }
 
-    //=======================================================================================
-    callProcess = () => {
-        //console.log('starting call process')
-        this.state.socket.emit('callStart', this.state.roomId + " " + this.state.socket.id)
+    selectPartner = () => {
+        Swal.fire({
+            title: 'Select your partner, enter value in [face][suit]',
+            input: 'text',
+            confirmButtonText: 'Confirm'
+        }).then((result) => {
+            if (this.state.hand.includes(result.value)) {
+                Swal.fire({
+                    title: `You cannot select yourself`,
+                    timer: 2000
+                })
+                console.log('cannot select yourself as partner')
+                this.selectPartner()
 
+            } else if (result.value === '') {
+                console.log('no partner selected')
+                Swal.fire({
+                    title: 'no partner selected',
+                    timer: '2000'
+                })
+                this.selectPartner()
+            } else {
+                console.log('other partner selected')
+                this.state.socket.emit('partnerQuery', this.state.roomId + " " + result.value)
+            }
+        })
+
+        this.state.socket.on('assignPartner', (card) => {
+            console.log('assigning in progress')
+            if (this.state.hand.includes(card)) {
+                const newNTW = Math.floor(this.state.currHighest / 5) + parseInt(this.state.needToWin)
+                this.setState({ needToWin: newNTW })
+            }
+        })
+
+    }
+
+    callProcess = () => {
+        this.state.socket.emit('callStart', this.state.roomId + " " + this.state.socket.id)
         this.state.socket.on('startCallSuccess', () => {
             Swal.fire({
                 title: "start calling!",
@@ -149,21 +242,17 @@ class Room extends Component {
                         }
                     }
                 } else {
-                    this.state.socket.emit('startCallSuccess')
+                    //need to call the swal again
                 }
             })
         })
 
         this.state.socket.on('isReady', (user) => {
-            //console.log('isReady recd, user: ' + user)
             const newReady = this.state.isReady.add(user)
             this.setState({ isReady: newReady })
-            console.log(`size of isReady set: ${this.state.isReady.size}`)
             if (this.state.isReady.size === 4) {
-                this.startGame(this.state.roomId)
+                this.startGame(this.state.roomId, user)
             }
-
-
         })
 
         this.state.socket.on('updateHighest', (result) => {
@@ -185,20 +274,24 @@ class Room extends Component {
         })
 
         this.state.socket.on('updateNeedToWin', () => {
-            const newNTW = Math.floor(this.state.currHighest / 5) + this.state.needToWin
+            const newNTW = Math.floor(this.state.currHighest / 5) + parseInt(this.state.needToWin)
             this.setState({ needToWin: newNTW })
         })
+
+        this.state.socket.on('selectPartner', () => {
+            this.selectPartner()
+        })
     }
+
+
     //=======================================================================================
 
     render() {
-        const { board, selected, socket, roomId, hand, currHighest, calledBy, isReady } = this.state
-        //========================================================================
-        // this.state.socket.on('dealHand', (hand) => {
-        //     console.log(`recd' hand of ${hand}`)
-        // })
-        //========================================================================
+        const { board, selected, socket, roomId, hand, currHighest, calledBy, isReady, needToWin, } = this.state
 
+        //socket listeners======================================================================================
+
+        //======================================================================================================
         const buttonStyle = {
             width: '350px',
             justifyContent: 'center',
@@ -228,9 +321,11 @@ class Room extends Component {
 
         return (
             <div>
+
                 <div>
-                    Welcome to room {this.state.roomId}
+                    Welcome, player {this.state.socket.id} to room {this.state.roomId}
                 </div>
+
                 <button
                     style={buttonStyle}
                     onClick={() => {
@@ -248,6 +343,7 @@ class Room extends Component {
                 >
                     Create Room
                 </button>
+
                 <button
                     style={buttonStyle}
                     onClick={() => {
@@ -263,6 +359,9 @@ class Room extends Component {
                                 this.setState({
                                     roomId: result.value,
                                 })
+                                //checkNumber checks if there are 4 people in the room
+                                this.state.socket.emit('checkNumber', this.state.roomId)
+                                //if exactly 4 people are in the room, then server.js calls dealHand
                             })
                             this.state.socket.on('NoRoom', (errmsg) => {
                                 Swal.fire({
@@ -292,11 +391,12 @@ class Room extends Component {
                             currHighest={currHighest}
                             calledBy={calledBy}
                             isReady={isReady}
+                            needToWin={needToWin}
                         />
                     </div>
-                    <button style={buttonStyle} onClick={this.dealQuery}>
+                    {/* <button style={buttonStyle} onClick={this.dealQuery}>
                         Deal hands
-                    </button>
+                    </button> */}
                     <button
                         style={buttonStyle}
                         onClick={this.callProcess}
@@ -394,22 +494,14 @@ class Room extends Component {
 
 const Board = (props) => {
 
-    props.socket.on('cardResponse', (card) => {
-        const faes = card.slice(9, 10)
-        const soot = card.slice(20, 21)
-        //
-
-        console.log(soot + " " + faes)
-        Swal.fire({ title: `Card ${faes} of ${soot} selected` })
-    })
-
     function showCards(hand, result) {
         hand.forEach(card => result.push(
             <Card
                 face={card.slice(0, 1)}
                 suit={card.slice(1)}
                 onClick={(e, card) =>
-                    props.socket.emit('clickedCard', (props.roomId + JSON.stringify(card)))
+                    //console.log(JSON.stringify(card))
+                    props.clickCard(e, card)
                 } />
         ))
     }
@@ -418,23 +510,45 @@ const Board = (props) => {
     showCards(props.hand, result)
     let PepeHands = () => result
 
-    // function ReadyToStart(readyArr) {
-    //     let ready
-    //     for (let i = 0; i < readyArr.length; i++) {
-    //         ready += (readyArr[i] + " \n")
-    //     }
-    //     return ready
-    // }
-
     return (
         <div>
+            <RoundBoard
+                selected={props.selected} />
             <PepeHands />
             <div>
                 {/*should probably pick a better font for this*/}
                 Current highest is: {resultInWords(props.currHighest)}, called by {props.calledBy}
                 <br />
                 {new Array(...props.isReady).join(', ')} is/are ready to start
+                <br />
+                You need {props.needToWin} sets to win
             </div>
+        </div>
+    )
+}
+
+//used to render the board in each round, (props.selected and props.collected)
+const RoundBoard = (props) => {
+    // each round => props.selected
+    // after each round, add to props.collected
+
+    function showSelected(selected, result) {
+        for (let card of selected.keys()) {
+            result.add(
+                <Card
+                    face={card.slice(0, 1)}
+                    suit={card.slice(1,)}
+                />
+            )
+        }
+    }
+
+    let chosen = new Set()
+    showSelected(props.selected, chosen.add(<CardStyles />))
+    let DisplaySelected = () => [...chosen]
+    return (
+        <div>
+            <DisplaySelected />
         </div>
     )
 }
