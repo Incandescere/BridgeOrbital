@@ -169,14 +169,15 @@ io.on('connection', (socket) => {
         socket.emit('getNumbers', io.sockets.adapter.rooms[rmid].length)
     })
 
-    socket.on('clickedCard', (userFS) => {
+    socket.on('clickedCard', (roomuserFS) => {
         //console.log(result + " clicked")
-        const rmid = result.slice(0, 20)
+        const room = roomuserFS.slice(0, 20)
+        const userFS = roomuserFS.slice(20,)
         //const fs = result.slice(20,)
         // console.log(rmid) 
         // console.log(card)
         // io.of('/').adapter.clients([rmid], (err, clients) => {
-        io.in(rmid).emit('cardSelected', userFS)
+        io.in(room).emit('cardSelected', userFS)
         //console.log(fs)
     })
 
@@ -192,20 +193,11 @@ io.on('connection', (socket) => {
         // socket.leave(socket.roomId)
     })
 
-    socket.on('partnerQuery', (result) => {
-        const rmid = result.slice(0, 20)
-        const card = result.slice(21,)
-        console.log('rmid:' + rmid + ' partner card:' + card)
-        io.in(rmid).emit('assignPartner', card)
-
-        //cannot emit to all clients except the bid winner
-
-        // io.of('/').adapter.clients([rmid], (err, clients) => {
-        //     io.to(clients[0]).emit('assignPartner', card)
-        //     io.to(clients[1]).emit('assignPartner', card)
-        //     io.to(clients[2]).emit('assignPartner', card)
-        //     io.to(clients[3]).emit('assignPartner', card)
-        // })
+    socket.on('partnerQuery', (rmidFS) => {
+        const rmid = rmidFS.slice(0, 20)
+        const FS = rmidFS.slice(21,)
+        console.log('rmid:' + rmid + ' partner card:' + FS)
+        io.to(rmid).emit('assignPartner', FS)
     })
 
     socket.on('callStart', (result) => {
@@ -252,6 +244,13 @@ io.on('connection', (socket) => {
             dealHand(rmid)
         }
     })
+
+    socket.on('winsSet', result => {
+        const user1 = result.slice(0, 20)
+        const user2 = result.slice(20,)
+        io.to(user1).emit('decrementNTW')
+        io.to(user2).emit('decrementNTW')
+    })
 })
 
 function dealHand(rmid) {
@@ -272,13 +271,6 @@ function dealHand(rmid) {
         console.log(clients[1] + ' => ' + hand1)
         console.log(clients[2] + ' => ' + hand2)
         console.log(clients[3] + ' => ' + hand3)
-    })
-
-    socket.on('winsSet', result => {
-        const user1 = result.slice(0, 20)
-        const user2 = result.slice(20,)
-        io.to(user1).emit('updateNTW')
-        io.to(user2).emit('updateNTW')
     })
 }
 
